@@ -124,10 +124,6 @@ function App() {
           <span className="brand-mark" aria-hidden="true">B</span>
           <span>Battery<span className="brand-light">Monitor</span></span>
         </a>
-        <div className="topbar-right">
-          <span className="environment"><span aria-hidden="true" className="live-dot" /> Ambiente de demonstração</span>
-          <span className="avatar" aria-label="Perfil de demonstração">D</span>
-        </div>
       </header>
 
       <main className="content">
@@ -179,7 +175,7 @@ function App() {
           <article className="metric-card card">
             <div className="metric-heading"><span>Alertas de tensão baixa</span><span className="metric-icon warning" aria-hidden="true">!</span></div>
             <strong className="metric-value">{alerts.length}</strong>
-            <span className="metric-caption">Limiar de demonstração configurável</span>
+            <span className="metric-caption">Abaixo do limite configurado</span>
           </article>
         </section>
 
@@ -189,7 +185,6 @@ function App() {
               <h2>Histórico de tensão</h2>
               <p>Valores coletados ao longo do período selecionado.</p>
             </div>
-            <span className="quality-badge">{latest?.quality === "simulated" ? "Dados simulados" : latest ? "Dados recebidos" : "Aguardando dados"}</span>
           </div>
           {chartData.length ? (
             <div className="chart-wrap" role="img" aria-label="Gráfico de tensão em volts ao longo do tempo">
@@ -241,7 +236,7 @@ function App() {
 
           <section className="card periods-card">
             <div className="section-heading">
-              <div><h2>Tendências inferidas</h2><p>Indicadores experimentais baseados apenas na tensão.</p></div>
+              <div><h2>Tendências de carga e descarga</h2><p>Classificação baseada na variação da tensão.</p></div>
             </div>
             {periods.length ? (
               <ul className="period-list">
@@ -258,7 +253,7 @@ function App() {
 
         <section className="card alerts-card">
           <div className="section-heading">
-            <div><h2>Alertas recentes</h2><p>Leituras abaixo do limiar definido para esta demonstração.</p></div>
+            <div><h2>Alertas recentes</h2><p>Leituras abaixo do limite configurado.</p></div>
             <span className={`alert-count ${alerts.length ? "has-alerts" : ""}`}>{alerts.length} alerta{alerts.length === 1 ? "" : "s"}</span>
           </div>
           {alerts.length ? (
@@ -277,10 +272,6 @@ function App() {
             </div>
           ) : <div className="empty-state compact">Nenhum alerta para o equipamento e período consultados.</div>}
         </section>
-
-        <footer className="disclaimer">
-          <strong>Protótipo observacional.</strong> Os dados desta demonstração são simulados. Tendências de carga/descarga são inferências experimentais: tensão isolada não confirma SoC, SoH nem ciclos eletroquímicos. Não conecte este protótipo a baterias reais.
-        </footer>
       </main>
     </div>
   );
