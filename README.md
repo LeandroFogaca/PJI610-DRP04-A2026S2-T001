@@ -299,5 +299,4 @@ A distinção explícita entre `devices`, `equipment`, `batteries` e associaçõ
 
 ---
 
-**Licença e autoria:** definir com o grupo antes da publicação pública do repositório.  
 **Status de entrega:** MVP de demonstração implementado. Build web/backend e testes automatizados aprovados; execução com Docker, compilação Wokwi, conexão externa ao broker e validação em campo permanecem pendentes.
