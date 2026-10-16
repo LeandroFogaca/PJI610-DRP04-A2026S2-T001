@@ -151,6 +151,8 @@ activemq-data/
 
 # Environments
 .env
+.env.*
+!.env.example
 .envrc
 .venv
 env/
@@ -215,6 +217,14 @@ tempCodeRunnerFile.py
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Node.js
+node_modules/
+*.tsbuildinfo
+dist/
+
+# PlatformIO
+.pio/
 
 # Streamlit
 .streamlit/secrets.toml

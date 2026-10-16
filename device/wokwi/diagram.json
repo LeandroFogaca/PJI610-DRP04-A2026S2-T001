@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "author": "UNIVESP - Projeto Integrador VI",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-v1", "id": "esp32", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": -90, "left": 250, "attrs": { "value": "2048" } }
+  ],
+  "connections": [
+    ["pot1:VCC", "esp32:3V3", "red", []],
+    ["pot1:GND", "esp32:GND.1", "black", []],
+    ["pot1:SIG", "esp32:D34", "green", []]
+  ],
+  "dependencies": {}
+}

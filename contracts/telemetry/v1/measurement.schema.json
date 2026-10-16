@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://battery-monitoring.local/contracts/telemetry/v1/measurement.schema.json",
+  "title": "Battery monitoring measurement v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "message_id", "device_id", "timestamp", "metrics"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "message_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "device_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "value", "unit", "quality"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "value": { "type": "number" },
+          "unit": { "type": "string", "minLength": 1, "maxLength": 16 },
+          "quality": { "enum": ["simulated", "measured", "estimated"] }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@battery-monitoring/device",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "simulate": "node simulator/index.mjs",
+    "test": "node --test simulator/simulator.test.mjs"
+  },
+  "dependencies": {
+    "mqtt": "^5.14.1"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "battery-monitoring-iot",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": ["backend", "dashboard", "device"],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:dashboard": "npm run dev --workspace dashboard",
+    "device:simulate": "npm run simulate --workspace device",
+    "device:test": "npm run test --workspace device",
+    "test": "npm run test --workspace backend",
+    "build": "npm run build --workspace backend && npm run build --workspace dashboard"
+  },
+  "devDependencies": {
+    "light-my-request": "6.5.1",
+    "vitest": "^4.1.12"
+  },
+  "overrides": {
+    "vite": "6.4.4"
+  }
+}

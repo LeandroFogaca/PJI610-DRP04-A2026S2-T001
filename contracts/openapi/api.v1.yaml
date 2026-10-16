@@ -1,0 +1,99 @@
+openapi: 3.1.0
+info:
+  title: Battery Monitoring API
+  version: 1.0.0
+  description: API for observational battery-voltage monitoring. Periods are inferred from voltage trends and are not confirmed charge cycles.
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      summary: Check service and database readiness
+      responses:
+        "200":
+          description: Service is ready
+  /api/v1/devices:
+    get:
+      summary: List registered monitoring devices
+      responses:
+        "200":
+          description: Devices
+  /api/v1/equipment:
+    get:
+      summary: List monitored equipment
+      responses:
+        "200":
+          description: Equipment
+  /api/v1/batteries:
+    get:
+      summary: List batteries
+      responses:
+        "200":
+          description: Batteries
+  /api/v1/equipment/{id}/measurements:
+    get:
+      summary: Query voltage history for equipment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Measurements in the requested time range
+  /api/v1/batteries/{id}/periods:
+    get:
+      summary: Infer likely charging/discharging periods from voltage trends
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Inferred periods; not confirmed electrochemical cycles
+  /api/v1/alerts:
+    get:
+      summary: List low-voltage alerts
+      parameters:
+        - in: query
+          name: equipment_id
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Alerts
+  /api/v1/measurements:
+    post:
+      summary: Ingest a measurement over HTTP
+      description: Alternative ingestion adapter. The device must already be registered.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../telemetry/v1/measurement.schema.json
+      responses:
+        "201":
+          description: Measurement accepted
+        "200":
+          description: Duplicate delivery; existing measurement retained
+        "400":
+          description: Invalid contract or unregistered device
