@@ -82,6 +82,14 @@ function App() {
     return () => { active = false; };
   }, []);
 
+  const defaultRefreshIntervalMs = 15_000;
+  const rawRefreshInterval = Number(import.meta.env.VITE_REFRESH_INTERVAL_MS);
+  const refreshIntervalMs =
+    Number.isFinite(rawRefreshInterval) && rawRefreshInterval >= 1000
+      ? rawRefreshInterval
+      : defaultRefreshIntervalMs;
+  const refreshIntervalSec = refreshIntervalMs / 1000;
+
   useEffect(() => {
     if (!selectedId) return;
     let active = true;
@@ -93,12 +101,12 @@ function App() {
       }
     };
     void update();
-    const timer = window.setInterval(() => void update(), 15_000);
+    const timer = window.setInterval(() => void update(), refreshIntervalMs);
     return () => {
       active = false;
       window.clearInterval(timer);
     };
-  }, [reload, selectedId]);
+  }, [refreshIntervalMs, reload, selectedId]);
 
   const latest = measurements.at(-1);
   const chartData = useMemo(() => {
@@ -135,7 +143,7 @@ function App() {
           </div>
           <div className="refresh-note" aria-live="polite">
             <span className="live-dot" aria-hidden="true" />
-            Atualização a cada 15 s
+            Atualização a cada {refreshIntervalSec} s
           </div>
         </section>
 
