@@ -69,6 +69,18 @@ function readConfiguration(environment) {
 }
 
 export function startSimulator(environment = process.env) {
+  if (environment === process.env && typeof process.loadEnvFile === "function") {
+    try {
+      process.loadEnvFile(new URL("../.env", import.meta.url));
+    } catch {
+      try {
+        process.loadEnvFile(new URL("../../.env", import.meta.url));
+      } catch {
+        // Proceed with defaults if .env is missing
+      }
+    }
+  }
+
   const { deviceId, mqttUrl, sampleIntervalMs } = readConfiguration(environment);
   const topic = measurementTopic(deviceId);
   const client = mqtt.connect(mqttUrl, { reconnectPeriod: 2_000, connectTimeout: 10_000 });
