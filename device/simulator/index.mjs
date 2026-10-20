@@ -14,9 +14,35 @@ export function getBatteryConfig(environment = process.env) {
   const lowVoltage = Number(environment.BATTERY_LOW_VOLTAGE ?? 22.0);
   const lowDurationMinutes = Number(environment.BATTERY_LOW_DURATION_MINUTES ?? 30);
   const sampleIntervalMs = Number(environment.SAMPLE_INTERVAL_MS ?? defaultSampleIntervalMs);
-  const normalDrain = Number(environment.BATTERY_DRAIN_NORMAL ?? 0.02);
+
+  const hasExplicitNormalMinMax =
+    environment.BATTERY_DRAIN_NORMAL_MIN !== undefined ||
+    environment.BATTERY_DRAIN_NORMAL_MAX !== undefined;
+  const normalDrainMin = Number(
+    environment.BATTERY_DRAIN_NORMAL_MIN ??
+      (hasExplicitNormalMinMax ? 0 : (environment.BATTERY_DRAIN_NORMAL ?? 0)),
+  );
+  const normalDrainMax = Number(
+    environment.BATTERY_DRAIN_NORMAL_MAX ??
+      (hasExplicitNormalMinMax ? 0.05 : (environment.BATTERY_DRAIN_NORMAL ?? 0.05)),
+  );
+  const normalDrain = Number(
+    environment.BATTERY_DRAIN_NORMAL ?? (normalDrainMin + normalDrainMax) / 2,
+  );
+
+  const hasExplicitAccelMinMax =
+    environment.BATTERY_DRAIN_ACCELERATED_MIN !== undefined ||
+    environment.BATTERY_DRAIN_ACCELERATED_MAX !== undefined;
+  const acceleratedDrainMin = Number(
+    environment.BATTERY_DRAIN_ACCELERATED_MIN ??
+      (hasExplicitAccelMinMax ? 0.05 : (environment.BATTERY_DRAIN_ACCELERATED ?? 0.05)),
+  );
+  const acceleratedDrainMax = Number(
+    environment.BATTERY_DRAIN_ACCELERATED_MAX ??
+      (hasExplicitAccelMinMax ? 0.10 : (environment.BATTERY_DRAIN_ACCELERATED ?? 0.10)),
+  );
   const acceleratedDrain = Number(
-    environment.BATTERY_DRAIN_ACCELERATED ?? Math.max(normalDrain * 2, 0.05),
+    environment.BATTERY_DRAIN_ACCELERATED ?? (acceleratedDrainMin + acceleratedDrainMax) / 2,
   );
 
   return {
@@ -27,10 +53,68 @@ export function getBatteryConfig(environment = process.env) {
     sampleIntervalMs,
     normalDrain,
     acceleratedDrain,
+    normalDrainMin,
+    normalDrainMax,
+    acceleratedDrainMin,
+    acceleratedDrainMax,
   };
 }
 
-export function calculateBatteryVoltage(sequence, config = getBatteryConfig()) {
+export class BatterySimulator {
+  constructor(config = getBatteryConfig(), random = Math.random) {
+    this.config = config;
+    this.random = random;
+    this.sequence = 0;
+    this.cycleIndex = 0;
+    this.lowPhaseSamples = 0;
+    this.voltage = this.config.fullVoltage;
+    this.n3 = Math.max(
+      1,
+      Math.round((this.config.lowDurationMinutes * 60 * 1000) / this.config.sampleIntervalMs),
+    );
+  }
+
+  nextSample() {
+    const seq = this.sequence++;
+    if (seq === 0) {
+      this.voltage = this.config.fullVoltage;
+      return { sequence: seq, voltage: this.voltage, isSwap: false };
+    }
+
+    let isSwap = false;
+    if (this.voltage >= this.config.alertVoltage) {
+      // Phase 1: Normal discharge (>= 23 V), random between normalDrainMin and normalDrainMax
+      const drainRange = this.config.normalDrainMax - this.config.normalDrainMin;
+      const drain = this.config.normalDrainMin + this.random() * drainRange;
+      this.voltage = Math.max(this.config.alertVoltage - 0.05, this.voltage - drain);
+    } else if (this.voltage >= this.config.lowVoltage) {
+      // Phase 2: Accelerated discharge (< 23 V down to 22 V), random between acceleratedDrainMin and acceleratedDrainMax
+      const drainRange = this.config.acceleratedDrainMax - this.config.acceleratedDrainMin;
+      const drain = this.config.acceleratedDrainMin + this.random() * drainRange;
+      this.voltage = Math.max(this.config.lowVoltage - 0.05, this.voltage - drain);
+    } else {
+      // Phase 3: Below 22 V for lowDurationMinutes
+      this.lowPhaseSamples++;
+      if (this.lowPhaseSamples >= this.n3) {
+        this.cycleIndex++;
+        this.lowPhaseSamples = 0;
+        this.voltage = this.config.fullVoltage + ((this.cycleIndex % 3) * 0.2);
+        isSwap = true;
+      } else {
+        const lowPhaseDrop = 0.01 + this.lowPhaseSamples * (2.0 / this.n3);
+        this.voltage = Math.max(18.0, this.config.lowVoltage - lowPhaseDrop);
+      }
+    }
+
+    return { sequence: seq, voltage: this.voltage, isSwap };
+  }
+}
+
+export function calculateBatteryVoltage(
+  sequence,
+  config = getBatteryConfig(),
+  random = Math.random,
+) {
   const {
     fullVoltage,
     alertVoltage,
@@ -39,58 +123,81 @@ export function calculateBatteryVoltage(sequence, config = getBatteryConfig()) {
     sampleIntervalMs,
     normalDrain,
     acceleratedDrain,
+    normalDrainMin,
+    normalDrainMax,
+    acceleratedDrainMin,
+    acceleratedDrainMax,
   } = config;
 
-  // Phase 1: From fullVoltage (> 26 V) down to alertVoltage (23.0 V)
-  const n1 = Math.max(1, Math.ceil((fullVoltage - alertVoltage) / normalDrain));
+  if (normalDrainMin === normalDrainMax && acceleratedDrainMin === acceleratedDrainMax) {
+    // Phase 1: From fullVoltage (> 26 V) down to alertVoltage (23.0 V)
+    const n1 = Math.max(1, Math.ceil((fullVoltage - alertVoltage) / normalDrain));
 
-  // Phase 2: From alertVoltage (23.0 V) down to lowVoltage (22.0 V)
-  // Below 23 V, consumption is at least 2x higher
-  const effectiveAcceleratedDrain = Math.max(acceleratedDrain, normalDrain * 2);
-  const n2 = Math.max(1, Math.ceil((alertVoltage - lowVoltage) / effectiveAcceleratedDrain));
+    // Phase 2: From alertVoltage (23.0 V) down to lowVoltage (22.0 V)
+    // Below 23 V, consumption is at least 2x higher
+    const effectiveAcceleratedDrain = Math.max(acceleratedDrain, normalDrain * 2);
+    const n2 = Math.max(1, Math.ceil((alertVoltage - lowVoltage) / effectiveAcceleratedDrain));
 
-  // Phase 3: Below 22 V for exactly 30 minutes (lowDurationMinutes)
-  const n3 = Math.max(1, Math.round((lowDurationMinutes * 60 * 1000) / sampleIntervalMs));
+    // Phase 3: Below 22 V for exactly 30 minutes (lowDurationMinutes)
+    const n3 = Math.max(1, Math.round((lowDurationMinutes * 60 * 1000) / sampleIntervalMs));
 
-  // Total samples before battery swap occurs
-  const nTotal = n1 + n2 + n3;
+    // Total samples before battery swap occurs
+    const nTotal = n1 + n2 + n3;
 
-  const cycleIndex = Math.floor(sequence / nTotal);
-  const step = sequence % nTotal;
+    const cycleIndex = Math.floor(sequence / nTotal);
+    const step = sequence % nTotal;
 
-  // Recharged battery full voltage (> 26 V)
-  const cycleFullVoltage = fullVoltage + ((cycleIndex % 3) * 0.2);
+    // Recharged battery full voltage (> 26 V)
+    const cycleFullVoltage = fullVoltage + ((cycleIndex % 3) * 0.2);
 
-  if (step < n1) {
-    // Phase 1: Normal discharge (>= 23 V)
-    const drop = step * ((cycleFullVoltage - alertVoltage) / n1);
-    return Math.max(alertVoltage, cycleFullVoltage - drop);
+    if (step < n1) {
+      // Phase 1: Normal discharge (>= 23 V)
+      const drop = step * ((cycleFullVoltage - alertVoltage) / n1);
+      return Math.max(alertVoltage, cycleFullVoltage - drop);
+    }
+
+    if (step < n1 + n2) {
+      // Phase 2: Accelerated discharge (< 23 V down to 22 V, at least 2x consumption)
+      const k = step - n1;
+      const drop = (k + 1) * ((alertVoltage - lowVoltage) / n2);
+      return Math.max(lowVoltage, alertVoltage - drop);
+    }
+
+    // Phase 3: Below 22 V for exactly 30 minutes (n3 samples)
+    // Continuous decreasing consumption while waiting for battery swap
+    const m = step - (n1 + n2);
+    const lowPhaseDrop = 0.01 + m * (2.0 / n3);
+    return Math.max(18.0, lowVoltage - lowPhaseDrop);
   }
 
-  if (step < n1 + n2) {
-    // Phase 2: Accelerated discharge (< 23 V down to 22 V, at least 2x consumption)
-    const k = step - n1;
-    const drop = (k + 1) * ((alertVoltage - lowVoltage) / n2);
-    return Math.max(lowVoltage, alertVoltage - drop);
+  const sim = new BatterySimulator(config, random);
+  let sample;
+  for (let s = 0; s <= sequence; s++) {
+    sample = sim.nextSample();
   }
-
-  // Phase 3: Below 22 V for exactly 30 minutes (n3 samples)
-  // Continuous decreasing consumption while waiting for battery swap
-  const m = step - (n1 + n2);
-  const lowPhaseDrop = 0.01 + m * (2.0 / n3);
-  return Math.max(18.0, lowVoltage - lowPhaseDrop);
+  return sample.voltage;
 }
 
 export function createMeasurement(
   deviceId,
-  sequence,
+  sequenceOrSample,
   timestamp = new Date(),
   random = Math.random,
-  config,
+  config = getBatteryConfig(),
 ) {
   if (!validDeviceId.test(deviceId)) {
     throw new Error("DEVICE_ID must contain 1 to 64 ASCII letters, digits, '.', '_' or '-'.");
   }
+  let sequence;
+  let voltageValue;
+
+  if (typeof sequenceOrSample === "object" && sequenceOrSample !== null) {
+    sequence = sequenceOrSample.sequence ?? 0;
+    voltageValue = sequenceOrSample.voltage;
+  } else {
+    sequence = sequenceOrSample;
+  }
+
   if (!Number.isSafeInteger(sequence) || sequence < 0) {
     throw new Error("sequence must be a non-negative safe integer.");
   }
@@ -98,8 +205,10 @@ export function createMeasurement(
     throw new Error("timestamp must be a valid Date.");
   }
 
-  const baseVoltage = calculateBatteryVoltage(sequence, config);
-  const voltage = Math.min(maximumVoltage, Math.max(0, baseVoltage));
+  if (voltageValue === undefined) {
+    voltageValue = calculateBatteryVoltage(sequence, config, random);
+  }
+  const voltage = Math.min(maximumVoltage, Math.max(0, voltageValue));
 
   return {
     schema_version: "1.0",
@@ -163,7 +272,7 @@ export function startSimulator(environment = process.env) {
   const batteryConfig = getBatteryConfig(environment);
   const topic = measurementTopic(deviceId);
   const client = mqtt.connect(mqttUrl, { reconnectPeriod: 2_000, connectTimeout: 10_000 });
-  let sequence = 0;
+  const simulator = new BatterySimulator(batteryConfig, Math.random);
   let sampleTimer;
   let previousVoltage = null;
 
@@ -171,18 +280,19 @@ export function startSimulator(environment = process.env) {
     console.info(`Device simulator connected to ${mqttUrl}; publishing to ${topic}`);
     if (sampleTimer) clearInterval(sampleTimer);
     const publishSample = () => {
-      const measurement = createMeasurement(deviceId, sequence++, new Date(), Math.random, batteryConfig);
+      const sample = simulator.nextSample();
+      const measurement = createMeasurement(deviceId, sample, new Date(), Math.random, batteryConfig);
       const voltage = measurement.metrics[0].value;
       let statusNote = "";
 
-      if (previousVoltage !== null && voltage > 26.0 && previousVoltage < 22.0) {
+      if (sample.isSwap || (previousVoltage !== null && voltage > 26.0 && previousVoltage < 22.0)) {
         statusNote = " 🔄 [Bateria trocada por nova bateria recarregada (>26 V)]";
       } else if (voltage < 22.0) {
-        statusNote = " ⚠️ [Bateria crítica (<22 V) - contagem de 30 min para troca]";
+        statusNote = ` ⚠️ [Bateria crítica (<22 V) - contagem para troca]`;
       } else if (voltage < 23.0) {
-        statusNote = " ⚡ [Subtensão (<23 V) - consumo acelerado 2x+]";
-      } else if (sequence === 1) {
-        statusNote = " 🔋 [Bateria carregada conectada (>26 V)]";
+        statusNote = ` ⚡ [Subtensão (<23 V) - consumo acelerado (${batteryConfig.acceleratedDrainMin.toFixed(2)}-${batteryConfig.acceleratedDrainMax.toFixed(2)} V)]`;
+      } else if (sample.sequence === 0) {
+        statusNote = ` 🔋 [Bateria conectada (>26 V) - consumo normal (${batteryConfig.normalDrainMin.toFixed(2)}-${batteryConfig.normalDrainMax.toFixed(2)} V)]`;
       }
 
       previousVoltage = voltage;

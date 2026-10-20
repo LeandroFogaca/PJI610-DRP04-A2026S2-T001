@@ -5,6 +5,7 @@ import {
   calculateBatteryVoltage,
   getBatteryConfig,
   measurementTopic,
+  BatterySimulator,
 } from "./index.mjs";
 
 test("creates a measurement matching the v1 telemetry envelope with recharged battery level > 26 V", () => {
@@ -72,4 +73,29 @@ test("rejects device IDs that cannot safely identify an MQTT topic", () => {
   assert.throws(() => createMeasurement("invalid/device", 0), /ASCII letters/);
   assert.throws(() => createMeasurement("wildcard+#", 0), /ASCII letters/);
   assert.throws(() => createMeasurement("x".repeat(65), 0), /1 to 64 ASCII letters/);
+});
+
+test("simulates random drain within configured ranges [0, 0.05] and [0.05, 0.10]", () => {
+  const config = getBatteryConfig({
+    SAMPLE_INTERVAL_MS: "1000",
+    BATTERY_DRAIN_NORMAL_MIN: "0",
+    BATTERY_DRAIN_NORMAL_MAX: "0.05",
+    BATTERY_DRAIN_ACCELERATED_MIN: "0.05",
+    BATTERY_DRAIN_ACCELERATED_MAX: "0.10",
+  });
+
+  assert.equal(config.normalDrainMin, 0);
+  assert.equal(config.normalDrainMax, 0.05);
+  assert.equal(config.acceleratedDrainMin, 0.05);
+  assert.equal(config.acceleratedDrainMax, 0.10);
+
+  // Test BatterySimulator normal phase drain bounds
+  const sim = new BatterySimulator(config, () => 0.5); // Midpoint
+  const s0 = sim.nextSample();
+  assert.equal(s0.voltage, config.fullVoltage);
+
+  const s1 = sim.nextSample();
+  const normalDelta = s0.voltage - s1.voltage;
+  assert.ok(normalDelta >= 0 && normalDelta <= 0.05, `Normal delta ${normalDelta} within [0, 0.05]`);
+  assert.ok(Math.abs(normalDelta - 0.025) < 0.001, "Midpoint random yields 0.025 drain");
 });
