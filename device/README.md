@@ -2,37 +2,85 @@
 
 O circuito Wokwi usa um potenciômetro ligado exclusivamente ao ADC GPIO34 para **simular** tensão. A escala didática vai de 0 a 48 V; não representa calibração de bateria nem autoriza conexão a hardware real.
 
-## Simulador executável no Windows
+## 1. Painel Web de Simulação Multi-Dispositivos (Recomendado)
 
-O simulador local publica dados sintéticos no mesmo broker e contrato usados pelo firmware ESP32. Ele não requer PlatformIO, Wokwi, Docker nem Mosquitto: o próprio backend inicia o broker MQTT local.
+O módulo conta com um **gerenciador web nativo** para instanciar e controlar múltiplos dispositivos ESP32 simulados de forma independente e visual, conectado diretamente ao broker MQTT.
 
-Na raiz do repositório, abra dois terminais PowerShell. No primeiro, inicie a API em modo demonstrativo e em memória:
+### Como executar:
 
-```powershell
+A partir da raiz do monorepositório:
+```bash
+npm run device:simulate:ui
+```
+Ou dentro do diretório `device/`:
+```bash
+npm run simulate:ui
+```
+
+Abra no navegador: **`http://localhost:4000`**
+
+### Recursos da Interface Web:
+- **Múltiplos Dispositivos**: Inicia com `esp32-001` (ativo) e `esp32-002` (em standby).
+- **Controle Liga/Desliga**: Chaves individuais de ativação por dispositivo e botões globais *"Ligar Todos"* e *"Desligar Todos"*.
+- **Criação Dinâmica**: Botão *"+ Novo Dispositivo"* para instanciar novos ESP32 com seus respectivos equipamentos associados (`eq-003`, etc.) sem reiniciar o servidor.
+- **Ajuste de Parâmetros em Tempo Real**:
+  - **Dreno Normal**: Faixa configurável de consumo por amostra (padrão aleatório entre 0,00 V e 0,05 V).
+  - **Dreno Acelerado**: Faixa configurável em subtensão (padrão aleatório entre 0,05 V e 0,10 V).
+  - **Intervalo de Envio**: Em milissegundos, com atalhos rápidos de 1s, 2s e 5s.
+  - **Limiares de Tensão**: Tensão de bateria nova, alerta de subtensão e corte crítico.
+- **Troca de Bateria 🔄**: Botão para simular a substituição imediata da bateria por uma 100% recarregada, facilitando testes de ciclos e alertas no dashboard.
+- **Tema Visual**: Suporte a Tema Claro (padrão) e Tema Escuro, com alternância no botão *"🌙 Escuro"* / *"☀️ Claro"*.
+
+---
+
+## 2. Simulador em Linha de Comando (CLI)
+
+O simulador em linha de comando publica dados sintéticos de um único dispositivo no mesmo broker e contrato usados pelo firmware ESP32. Ele não requer PlatformIO, Wokwi, Docker nem Mosquitto: o próprio backend inicia o broker MQTT local.
+
+Na raiz do repositório, abra dois terminais (PowerShell, Bash ou Zsh). No primeiro, inicie a API em modo demonstrativo e em memória:
+
+```bash
 npm install
-$env:DEMO_IN_MEMORY = "true"
 npm run dev:backend
 ```
 
-No segundo terminal, inicie o simulador:
+No segundo terminal, inicie o simulador CLI:
 
-```powershell
+```bash
 npm run device:simulate
 ```
 
 O backend inicia a API em `http://127.0.0.1:3000` e o broker em `127.0.0.1:1883`. O simulador publica imediatamente e, por padrão, a cada 15 segundos em `telemetry/v1/esp32-001/measurements`. Os dados têm `quality: "simulated"` e uma tensão didática variável em torno de 24 V, limitada à escala de 0 a 48 V. Pressione `Ctrl+C` no terminal de cada processo para encerrar.
 
-Para trocar a identidade, o broker ou o intervalo, configure as variáveis antes de iniciar:
+Para trocar a identidade, o broker ou o intervalo na CLI, configure as variáveis de ambiente antes de iniciar:
 
-```powershell
-$env:DEVICE_ID = "esp32-002"
-$env:SAMPLE_INTERVAL_MS = "5000"
-npm run device:simulate
+```bash
+DEVICE_ID="esp32-002" SAMPLE_INTERVAL_MS="5000" npm run device:simulate
 ```
 
-Para exibir as medições no dashboard, inicie-o em um terceiro terminal com `npm run dev:dashboard` e abra `http://localhost:5173`. A API ingere mensagens MQTT em tempo real enquanto estiver em execução. No modo demonstrativo, os dados são mantidos apenas em memória e se perdem quando a API é encerrada. Para a demonstração com persistência, configure o `.env` e siga as instruções de banco de dados da raiz do repositório; o broker MQTT continua sendo iniciado pelo backend.
+Para exibir as medições no dashboard, inicie-o em outro terminal com `npm run dev:dashboard` e abra `http://localhost:5173`. A API ingere mensagens MQTT em tempo real enquanto estiver em execução.
 
-## Preparar e compilar
+---
+
+## 3. Variáveis de Ambiente do Simulador (`device/.env`)
+
+As configurações padrão do simulador podem ser personalizadas no arquivo `device/.env`:
+
+| Variável | Padrão | Descrição |
+| --- | --- | --- |
+| `MQTT_URL` | `mqtt://127.0.0.1:1883` | URL do broker MQTT |
+| `WEB_PORT` | `4000` | Porta do servidor HTTP do Painel de Simulação |
+| `DEVICE_ID` | `esp32-001` | Identificador padrão do primeiro dispositivo |
+| `EQUIPMENT_ID` | `eq-001` | Identificador do equipamento associado |
+| `SAMPLE_INTERVAL_MS` | `1500` | Intervalo padrão entre amostras (ms) |
+| `BATTERY_DRAIN_NORMAL_MIN` | `0.00` | Dreno mínimo normal por amostra (V) |
+| `BATTERY_DRAIN_NORMAL_MAX` | `0.05` | Dreno máximo normal por amostra (V) |
+| `BATTERY_DRAIN_ACCELERATED_MIN` | `0.05` | Dreno mínimo acelerado por amostra (V) |
+| `BATTERY_DRAIN_ACCELERATED_MAX` | `0.10` | Dreno máximo acelerado por amostra (V) |
+
+---
+
+## 4. Preparar e compilar Firmware Real (ESP32)
 
 1. Instale PlatformIO Core ou a extensão PlatformIO no VS Code.
 2. Edite `src/config.h` com o endereço do broker MQTT iniciado pelo backend e alcançável pelo simulador. O host MQTT vem vazio de propósito: nenhum endereço da máquina ou da rede é presumido. Para usar o ESP32/Wokwi, configure `MQTT_BIND_HOST` no `.env` do backend com um endereço acessível pelo simulador; não exponha o broker sem autenticação a redes não confiáveis.

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "simulate": "node simulator/index.mjs",
+    "simulate:ui": "node simulator/web.mjs",
+    "ui": "node simulator/web.mjs",
     "test": "node --test simulator/simulator.test.mjs"
   },
   "dependencies": {

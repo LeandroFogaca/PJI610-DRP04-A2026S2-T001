@@ -95,7 +95,7 @@ battery-monitoring-iot/
 ├── device/                         # Firmware ESP32 / Wokwi
 │   ├── platformio.ini
 │   ├── src/{config.h,main.cpp}
-│   ├── simulator/                   # Gerador MQTT executável com Node.js no Windows
+│   ├── simulator/                   # Simulador MQTT (CLI e Painel Web em http://localhost:4000)
 │   ├── wokwi.toml
 │   └── wokwi/diagram.json
 ├── backend/                        # Node.js / Fastify
@@ -238,20 +238,32 @@ A simulação no Wokwi **não comprova** precisão metrológica, proteção cont
 6. Abrir `http://localhost:5173`; o Vite encaminha `/api` para a API local.
 7. Para testar o ESP32, configurar `device/src/config.h`, compilar com `pio run` dentro de `device/` e abrir o projeto `device/wokwi.toml`.
 
-Para testar o device diretamente no Windows sem PlatformIO/Wokwi ou Docker, inicie a API em modo demonstrativo (`$env:DEMO_IN_MEMORY = "true"; npm run dev:backend`) e, em outro terminal PowerShell, execute `npm run device:simulate`. O backend inicia seu próprio broker MQTT local; consulte [device/README.md](./device/README.md) para os passos completos e a opção de dashboard.
+Para testar dispositivos e injetar telemetria MQTT sem necessidade de PlatformIO/Wokwi ou Docker:
+
+- **Painel Web de Simulação Multi-Dispositivos (Recomendado):**
+  Execute `npm run device:simulate:ui` (ou `npm run simulate:ui --workspace device`) e abra **`http://localhost:4000`**.
+  - Permite ligar/desligar transmissões individualmente (`esp32-001`, `esp32-002`) ou em lote ("Ligar Todos" / "Desligar Todos").
+  - Suporta criação dinâmica de novos dispositivos ESP32 em tempo de execução.
+  - Ajuste dinâmico de taxas de dreno em tempo real (dreno normal de 0 a 0,05 V e dreno acelerado em subtensão de 0,05 a 0,10 V).
+  - Intervalos de publicação ajustáveis com atalhos (1s, 2s, 5s) e limiares de tensão configuráveis.
+  - Botão de troca imediata de bateria ("Trocar Bateria 🔄") para testar os algoritmos de detecção de ciclo no dashboard.
+  - Interface com suporte a Tema Claro (padrão) e Tema Escuro.
+
+- **Simulador em Linha de Comando (CLI):**
+  Execute `npm run device:simulate` para iniciar uma transmissão contínua no terminal. Consulte [device/README.md](./device/README.md) para detalhes.
 
 **Broker MQTT:** o backend inicia seu próprio broker TCP na porta `MQTT_PORT` (padrão `1883`) e conecta seu consumidor internamente. Por padrão, ele escuta apenas em `127.0.0.1`. Para receber conexões externas do Wokwi, configure `MQTT_BIND_HOST=0.0.0.0` e `MQTT_HOST` no firmware com um endereço alcançável pelo simulador; a API e o broker não têm autenticação/TLS, portanto use apenas uma rede isolada de desenvolvimento e não os exponha à internet.
 
-Os detalhes do firmware estão em `device/README.md`; comandos da API e verificação estão em `backend/README.md` e `docs/testing.md`.
+Os detalhes do firmware e da tela de controle estão em `device/README.md`; comandos da API e verificação estão em `backend/README.md` e `docs/testing.md`.
 
-Para demonstrar a API, o broker MQTT e o dashboard sem Docker/PostgreSQL, defina `$env:DEMO_IN_MEMORY = "true"` no terminal PowerShell antes de executar `npm run dev:backend`. O modo em memória gera 48 medições sintéticas e não persiste alterações após reiniciar.
+Para demonstrar a API, o broker MQTT e o dashboard sem Docker/PostgreSQL, defina `$env:DEMO_IN_MEMORY = "true"` no terminal PowerShell (ou `DEMO_IN_MEMORY=true` no Linux/macOS) antes de executar `npm run dev:backend`. O modo em memória gera medições sintéticas iniciais e ingere telemetria MQTT em tempo real.
 
 ## 11. Testes e critérios de aceite
 
 - [ ] ESP32 simulado realiza leituras e publica mensagens conforme o JSON Schema v1.
 - [x] Backend valida payloads e rejeita mensagens inválidas com logs apropriados.
-- [ ] Duas unidades simuladas publicam telemetria separadamente.
-- [ ] Cada medição é associada ao equipamento e à bateria corretos na data da coleta.
+- [x] Duas unidades simuladas publicam telemetria separadamente (suportado pelo Painel Web e pelo gerador de simulação).
+- [x] Cada medição é associada ao equipamento e à bateria corretos na data da coleta.
 - [x] Duplicações por retransmissão não criam novos registros (teste do adapter HTTP em memória; integração PostgreSQL pendente).
 - [ ] Perda de rede não interrompe a aquisição, e o buffer é reprocessado após reconexão.
 - [x] API devolve dados por equipamento, bateria e período no modo demonstrativo.
