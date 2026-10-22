@@ -338,8 +338,6 @@ As duas páginas web (dashboard React e simulador do dispositivo) compartilham o
 - **Movimento reduzido:** quem tem `prefers-reduced-motion` no sistema vê gráficos e transições estáticos, sem opção para ligar isso no painel.
 - **Header alinhado:** o padding do header usa a geometria da coluna de conteúdo (percentual, não `100vw`), alinhando marca e ações com o corpo da página em qualquer proporção de tela, inclusive 21:9.
 
-O design system completo de contraste WCAG AA, acessibilidade para daltônicos (linhas tracejadas nos gráficos) e accordions do simulador está em [`docs/superpowers/specs/2026-10-21-refatoracao-frontend-acessibilidade.md`](docs/superpowers/specs/2026-10-21-refatoracao-frontend-acessibilidade.md); a implementação de temas/acessibilidade desta seção em [`docs/superpowers/specs/2026-10-21-temas-acessibilidade-engrenagem.md`](docs/superpowers/specs/2026-10-21-temas-acessibilidade-engrenagem.md).
-
 ---
 
 **Status de entrega:** MVP de demonstração implementado. Build web/backend e testes automatizados aprovados; execução com Docker, compilação Wokwi, conexão externa ao broker e validação em campo permanecem pendentes.
