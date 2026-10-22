@@ -3,57 +3,76 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <title>Simulador de Dispositivos IoT — Painel de Controle</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <script>
+    // mesmo esquema do dashboard: data-theme precisa existir antes do CSS pintar,
+    // senão sistema em tema claro vê flash de dark quando a escolha é auto.
+    (function () {
+      var choice = localStorage.getItem("simulator_theme") || "auto";
+      var theme = choice === "auto" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : choice;
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
+    /* Ops Center: dark é o morador, claro é visitante (mesmo esquema do dashboard React).
+       applyTheme sempre pinta o atributo data-theme, então as regras [data-theme="dark"]
+       lá embaixo continuam valendo no escuro — só troquei quem é o padrão. */
     :root {
+      --bg: #0a0f14;
+      --card-bg: #10161e;
+      --card-border: #1c2836;
+      --card-hover: #0f151d;
+      --text-main: #e6edf3;
+      --text-muted: #8b98a5;
+      --teal: #22d3ee;
+      --teal-hover: #4ddcf5;
+      --on-accent: #06222a;
+      --teal-glow: rgba(34, 211, 238, 0.25);
+      --green: #34d399;
+      --green-glow: rgba(52, 211, 153, 0.25);
+      --orange: #fbbf24;
+      --red: #f87171;
+      --surface: #0f151d;
+      --input-bg: #0b1016;
+      --input-border: #243140;
+      --input-text: #e6edf3;
+      --telemetry-bg: #0d141c;
+      --form-row-bg: #0f151d;
+      --pill-bg: #131c26;
+      --shadow-card: 0 8px 24px rgb(0 0 0 / 35%);
+      --font: 'Segoe UI', Arial, sans-serif;
+      --font-mono: 'JetBrains Mono', Consolas, monospace;
+      /* idem dashboard: sem declarar, o browser pinta scrollbar/spinner como se fosse claro */
+      color-scheme: dark;
+    }
+
+    [data-theme="light"] {
       --bg: #f5f7f8;
       --card-bg: #ffffff;
-      --card-border: #e2e8f0;
+      --card-border: #e6ebee;
       --card-hover: #f8fafc;
-      --text-main: #1e293b;
-      --text-muted: #64748b;
+      --text-main: #202a32;
+      --text-muted: #54636b;
       --teal: #087f8c;
       --teal-hover: #066c77;
+      --on-accent: #ffffff;
       --teal-glow: rgba(8, 127, 140, 0.2);
       --green: #10b981;
       --green-glow: rgba(16, 185, 129, 0.2);
       --orange: #f59e0b;
       --red: #ef4444;
+      --surface: #fafbfc;
       --input-bg: #ffffff;
-      --input-border: #cbd5e1;
-      --input-text: #1e293b;
+      --input-border: #dce3e7;
+      --input-text: #26343b;
       --telemetry-bg: #f8fafc;
       --form-row-bg: #f8fafc;
       --pill-bg: #ffffff;
-      --shadow-card: 0 4px 18px rgba(15, 23, 42, 0.05);
-      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
-    }
-
-    [data-theme="dark"] {
-      --bg: #0d131a;
-      --card-bg: rgba(22, 31, 41, 0.85);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --card-hover: rgba(255, 255, 255, 0.12);
-      --text-main: #f1f5f9;
-      --text-muted: #94a3b8;
-      --teal: #06b6d4;
-      --teal-hover: #0891b2;
-      --teal-glow: rgba(6, 182, 212, 0.25);
-      --green: #10b981;
-      --green-glow: rgba(16, 185, 129, 0.25);
-      --orange: #f59e0b;
-      --red: #ef4444;
-      --input-bg: #111822;
-      --input-border: #243242;
-      --input-text: #ffffff;
-      --telemetry-bg: #111923;
-      --form-row-bg: #131c26;
-      --pill-bg: #131c27;
-      --shadow-card: 0 6px 24px rgba(0, 0, 0, 0.3);
+      --shadow-card: 0 2px 6px rgb(30 50 60 / 3%);
+      color-scheme: light;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,26 +83,14 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      background-image: radial-gradient(circle at 15% 10%, rgba(8, 127, 140, 0.05) 0%, transparent 40%),
-                        radial-gradient(circle at 85% 90%, rgba(16, 185, 129, 0.04) 0%, transparent 45%);
-    }
-
-    [data-theme="dark"] body {
-      background-image: radial-gradient(circle at 15% 10%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
-                        radial-gradient(circle at 85% 90%, rgba(16, 185, 129, 0.06) 0%, transparent 45%);
     }
 
     header {
       border-bottom: 1px solid var(--card-border);
-      backdrop-filter: blur(12px);
-      background: rgba(255, 255, 255, 0.9);
+      background: var(--card-bg);
       position: sticky;
       top: 0;
       z-index: 50;
-    }
-
-    [data-theme="dark"] header {
-      background: rgba(13, 19, 26, 0.85);
     }
 
     .header-inner {
@@ -105,16 +112,11 @@
       color: var(--text-main);
     }
 
+    /* o ícone da casa já vem com squircle pronto no SVG — só dar o tamanho */
     .brand-icon {
       width: 40px;
       height: 40px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--teal), #0284c7);
-      display: grid;
-      place-items: center;
-      font-size: 20px;
-      color: #fff;
-      box-shadow: 0 4px 14px var(--teal-glow);
+      display: block;
     }
 
     .brand-text h1 {
@@ -138,7 +140,7 @@
     .btn {
       height: 38px;
       padding: 0 16px;
-      border-radius: 9px;
+      border-radius: 7px;
       font-family: var(--font);
       font-size: 13px;
       font-weight: 600;
@@ -152,13 +154,11 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, var(--teal), #0284c7);
-      color: #fff;
-      box-shadow: 0 3px 12px var(--teal-glow);
+      background: var(--teal);
+      color: var(--on-accent);
     }
     .btn-primary:hover {
-      background: linear-gradient(135deg, var(--teal-hover), #0369a1);
-      transform: translateY(-1px);
+      background: var(--teal-hover);
     }
 
     .btn-secondary {
@@ -169,6 +169,32 @@
     .btn-secondary:hover {
       background: var(--card-hover);
       border-color: #94a3b8;
+    }
+
+    /* botão fantasma: ele chama, ele não grita. trocar bateria é opcional,
+       salvar parâmetro é que é o "faz isso direito" da ficha */
+    .btn-ghost {
+      background: transparent;
+      color: var(--teal);
+      border: 1px solid var(--teal);
+    }
+    .btn-ghost:hover {
+      background: rgba(8, 127, 140, 0.08);
+    }
+    [data-theme="dark"] .btn-ghost:hover {
+      background: rgba(34, 211, 238, 0.12);
+    }
+
+    /* desligar TUDO sem preenchimento de propósito: o dedo tropeça menos num botão
+       que não parece "importante". já derrubei rede inteira em dia ruim, nunca mais. */
+    .btn-outline {
+      background: transparent;
+      color: var(--text-main);
+      border: 1px solid var(--input-border);
+    }
+    .btn-outline:hover {
+      border-color: #94a3b8;
+      background: var(--card-hover);
     }
 
     .btn-outline-teal {
@@ -191,7 +217,7 @@
     .summary-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 16px;
+      border-radius: 12px;
       padding: 20px 24px;
       margin-bottom: 28px;
       display: flex;
@@ -251,7 +277,7 @@
     .device-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 18px;
+      border-radius: 12px;
       padding: 24px;
       display: flex;
       flex-direction: column;
@@ -286,7 +312,7 @@
     .device-avatar {
       width: 48px;
       height: 48px;
-      border-radius: 14px;
+      border-radius: 12px;
       background: var(--card-hover);
       display: grid;
       place-items: center;
@@ -297,11 +323,11 @@
     .device-card.is-running .device-avatar {
       background: #e4f5f3;
       border-color: #75cbd2;
-      box-shadow: 0 0 12px var(--teal-glow);
+      color: var(--teal);
     }
     [data-theme="dark"] .device-card.is-running .device-avatar {
-      background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(16, 185, 129, 0.2));
-      border-color: rgba(6, 182, 212, 0.5);
+      background: rgba(34, 211, 238, 0.15);
+      border-color: rgba(34, 211, 238, 0.5);
     }
 
     .device-name-group h3 {
@@ -352,7 +378,7 @@
       letter-spacing: 0.5px;
     }
     .switch-status-label.online { color: var(--green); }
-    .switch-status-label.offline { color: #64748b; }
+    .switch-status-label.offline { color: var(--text-muted); }
 
     .switch {
       position: relative;
@@ -423,19 +449,21 @@
       background: #e2e8f0;
       color: var(--text-muted);
     }
+    /* essas três tags coloridinhas do status: no original a fonte era tão clarinha
+       que sumia no pastel. agora tem contraste de verdade. AA, não AA de "ah, tá". */
     .phase-badge.normal {
       background: #ecfdf5;
-      color: #059669;
+      color: #047857;
       border: 1px solid #a7f3d0;
     }
     .phase-badge.warning {
       background: #fffbeb;
-      color: #d97706;
+      color: #92400e;
       border: 1px solid #fde68a;
     }
     .phase-badge.critical {
       background: #fef2f2;
-      color: #dc2626;
+      color: #991b1b;
       border: 1px solid #fecaca;
     }
     [data-theme="dark"] .phase-badge.normal {
@@ -488,9 +516,9 @@
       border-radius: 6px;
       transition: width 0.35s ease, background-color 0.3s ease;
     }
-    .battery-fill.high { background: linear-gradient(90deg, #10b981, #059669); }
-    .battery-fill.mid { background: linear-gradient(90deg, #f59e0b, #d97706); }
-    .battery-fill.low { background: linear-gradient(90deg, #ef4444, #dc2626); }
+    .battery-fill.high { background: #10b981; }
+    .battery-fill.mid { background: #f59e0b; }
+    .battery-fill.low { background: #ef4444; }
 
     .meta-metrics {
       display: flex;
@@ -501,19 +529,49 @@
       border-top: 1px solid var(--card-border);
     }
 
-    /* Parameters Controls Section */
+    /* os dois blocos de config viraram acordeão. operador bom é operador que abre
+       o que precisa, não o que rola tela pra achar a leitura. details nativo, sem lib. de nada. */
     .params-section {
       display: flex;
       flex-direction: column;
       gap: 14px;
     }
 
-    .params-title {
+    .accordion {
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .accordion > summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      user-select: none;
+    }
+    .accordion > summary::-webkit-details-marker { display: none; }
+    .accordion > summary:focus-visible { outline: 3px solid #75cbd2; outline-offset: -3px; }
+    .accordion .params-title {
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.8px;
       color: var(--text-muted);
+    }
+    .accordion .chevron {
+      font-size: 12px;
+      color: var(--text-muted);
+      transition: transform 0.2s ease;
+    }
+    .accordion[open] .chevron { transform: rotate(180deg); }
+    .accordion-body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 0 14px 14px;
     }
 
     .form-row {
@@ -668,6 +726,11 @@
       .summary-card { flex-direction: column; align-items: stretch; }
       .summary-stats { justify-content: space-between; }
     }
+
+    /* quem pediu menos movimento no sistema não merece toast deslizando nem botão animando */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -675,7 +738,7 @@
   <header>
     <div class="header-inner">
       <a href="/" class="brand">
-        <div class="brand-icon">⚡</div>
+        <img class="brand-icon" src="/favicon.svg" alt="" width="40" height="40">
         <div class="brand-text">
           <h1>Simulador de Dispositivos ESP32</h1>
           <p>Painel de Controle e Injeção de Telemetria MQTT</p>
@@ -683,7 +746,7 @@
       </a>
 
       <div class="header-actions">
-        <button id="theme-btn" class="btn btn-secondary" onclick="toggleTheme()" title="Alternar tema visual">🌙 Escuro</button>
+        <button id="theme-btn" class="btn btn-secondary" onclick="toggleTheme()" title="Alternar tema visual">☀️ Claro</button>
         <button class="btn btn-primary" onclick="openAddModal()">+ Novo Dispositivo</button>
         <a href="http://localhost:5173" target="_blank" class="btn btn-outline-teal">Abrir Dashboard React &rarr;</a>
       </div>
@@ -707,8 +770,10 @@
       </div>
 
       <div class="header-actions">
-        <button class="btn btn-secondary" onclick="batchAction('start-all')">▶ Ligar Todos</button>
-        <button class="btn btn-secondary" onclick="batchAction('stop-all')">⏹ Desligar Todos</button>
+        <!-- um é cheio, o outro só contorno. é de propósito: derrubar a frota inteira
+             sem querer é bem mais fácil do que ligar. então o "desligar" pede um esforcinho a mais. -->
+        <button class="btn btn-primary" onclick="batchAction('start-all')">▶ Ligar Todos</button>
+        <button class="btn btn-outline" onclick="batchAction('stop-all')">⏹ Desligar Todos</button>
       </div>
     </div>
 
@@ -814,9 +879,14 @@
             </div>
           </div>
 
-          <!-- Parameter Inputs -->
+          <!-- config fica guardada aqui dentro, fechada. a pessoa abre quando quer mexer, não quando a tela empurra -->
           <div class="params-section">
-            <span class="params-title">Configuração de Telemetria e Dreno</span>
+            <details class="accordion">
+              <summary>
+                <span class="params-title">Configuração de Telemetria e Dreno</span>
+                <span class="chevron" aria-hidden="true">▼</span>
+              </summary>
+              <div class="accordion-body">
 
             <!-- Normal Drain -->
             <div class="form-row">
@@ -862,11 +932,18 @@
               </div>
             </div>
 
+              </div>
+            </details>
+
+            <details class="accordion">
+              <summary>
+                <span class="params-title">Limiares de Tensão (V)</span>
+                <span class="chevron" aria-hidden="true">▼</span>
+              </summary>
+              <div class="accordion-body">
+
             <!-- Thresholds Grid -->
             <div class="form-row">
-              <div class="form-row-label">
-                <strong>Limiares de Tensão (V)</strong>
-              </div>
               <div class="thresholds-grid">
                 <div>
                   <span style="font-size: 11px; color: var(--text-muted);">Bateria Nova:</span>
@@ -886,12 +963,15 @@
                 </div>
               </div>
             </div>
+
+              </div>
+            </details>
           </div>
 
-          <!-- Actions Footer -->
+          <!-- rodapé de ação: salvar manda, trocar bateria só sussurra -->
           <div class="card-actions">
             <button class="btn btn-primary btn-save" onclick="saveDeviceParams('${device.deviceId}')">Salvar Parâmetros</button>
-            <button class="btn btn-secondary btn-swap" onclick="swapBattery('${device.deviceId}')" title="Simula troca por bateria 100% recarregada">Trocar Bateria 🔄</button>
+            <button class="btn btn-ghost btn-swap" onclick="swapBattery('${device.deviceId}')" title="Simula troca por bateria 100% recarregada">Trocar Bateria 🔄</button>
             ${device.deviceId !== 'esp32-001' && device.deviceId !== 'esp32-002' ? `
               <button class="btn btn-secondary" onclick="deleteDevice('${device.deviceId}')" style="color: var(--red);" title="Remover este dispositivo">✕</button>
             ` : ''}
@@ -1080,25 +1160,24 @@
       setTimeout(() => { toast.style.display = "none"; }, 3000);
     }
 
-    // Theme toggle support (Default: Light Theme)
-    let currentTheme = localStorage.getItem("simulator_theme") || "light";
-    function applyTheme(theme) {
-      currentTheme = theme;
-      if (theme === "dark") {
-        document.documentElement.setAttribute("data-theme", "dark");
-      } else {
-        document.documentElement.removeAttribute("data-theme");
-      }
-      localStorage.setItem("simulator_theme", theme);
+    // default é auto: segue o tema do sistema (igual ao dashboard). sem engrenagem aqui —
+    // a página é de debug/demo — mas o botão cicla Auto → Claro → Escuro → Auto pra
+    // qualquer um escapar do auto sem ficar preso nele.
+    let themeChoice = localStorage.getItem("simulator_theme") || "auto";
+    const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+    function applyTheme() {
+      const theme = themeChoice === "auto" ? (systemDark.matches ? "dark" : "light") : themeChoice;
+      document.documentElement.setAttribute("data-theme", theme);
       const btn = document.getElementById("theme-btn");
-      if (btn) {
-        btn.innerText = theme === "dark" ? "☀️ Claro" : "🌙 Escuro";
-      }
+      if (btn) btn.innerText = { auto: "🌗 Auto", light: "☀️ Claro", dark: "🌙 Escuro" }[themeChoice];
     }
     function toggleTheme() {
-      applyTheme(currentTheme === "light" ? "dark" : "light");
+      themeChoice = themeChoice === "auto" ? "light" : themeChoice === "light" ? "dark" : "auto";
+      localStorage.setItem("simulator_theme", themeChoice);
+      applyTheme();
     }
-    applyTheme(currentTheme);
+    systemDark.addEventListener("change", applyTheme);
+    applyTheme();
 
     // Polling interval
     fetchDevices();
