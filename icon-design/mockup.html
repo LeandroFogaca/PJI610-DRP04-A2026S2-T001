@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Mockups de Ícones — BatteryMonitor</title>
+<style>
+  body { margin:0; background:#0a0f14; color:#e6edf3; font-family:"Segoe UI",Arial,sans-serif; padding:40px 48px 64px; }
+  h1 { font-size:26px; letter-spacing:-.5px; }
+  p.lead { color:#8b98a5; font-size:14px; max-width:720px; }
+  .card { background:#10161e; border:1px solid #1c2836; border-radius:14px; padding:24px; width:100%; max-width:1100px; margin-top:28px; }
+  .card h2 { margin:0 0 4px; font-size:17px; }
+  .card .why { color:#8b98a5; font-size:13px; margin:0 0 18px; }
+  .sizes { display:flex; align-items:flex-end; gap:36px; }
+  .sizes figure { margin:0; text-align:center; }
+  .sizes figcaption { color:#8b98a5; font-size:11px; margin-top:8px; font-family:Consolas,monospace; }
+  svg { display:block; }
+</style>
+</head>
+<body>
+<h1>BatteryMonitor — candidatos de ícone</h1>
+<p class="lead">Remetem a bateria sem ser o retângulo da barra de status do celular: massa sólida com detalhes recortados (figure-ground), um só acento — o ciano #22d3ee do Ops Center.</p>
+
+<div class="card">
+  <h2>1 · Célula</h2>
+  <p class="why">Cilindro industrial com visor de nível central. O ciano É a carga. Figure-ground: o rasgo no corpo. Risco 16px: nível pode sumir — a célula continua lendo.</p>
+  <div class="sizes" id="s1"></div>
+</div>
+
+<div class="card">
+  <h2>2 · Borne</h2>
+  <p class="why">Polo positivo visto de cima: o "+" recortado na massa + anel ciano de energia. Risco 16px: gap anel↔disco fecha e vira "alvo" — testar antes de aprovar.</p>
+  <div class="sizes" id="s2"></div>
+</div>
+
+<div class="card">
+  <h2>3 · Bloco</h2>
+  <p class="why">Bateria de tração (bloco + borne) com o dente-de-serra do gráfico de ciclos atravessado em ciano. Bateria E ciclo no mesmo glifo. Risco 16px: zigzag precisa manter 2 picos legíveis (stroke 96 ajuda).</p>
+  <div class="sizes" id="s3"></div>
+</div>
+
+<script>
+const BG = 'M 601.62 0 c 147.85 0 221.77 0 278.24 28.77 a 263.99 263.99 0 0 1 115.37 115.37 c 28.77 56.47 28.77 130.39 28.77 278.24 L 1024 601.62 c 0 147.85 0 221.77 -28.77 278.24 a 263.99 263.99 0 0 1 -115.37 115.37 c -56.47 28.77 -130.39 28.77 -278.24 28.77 L 422.38 1024 c -147.85 0 -221.77 0 -278.24 -28.77 a 263.99 263.99 0 0 1 -115.37 -115.37 c -28.77 -56.47 -28.77 -130.39 -28.77 -278.24 L 0 422.38 c 0 -147.85 0 -221.77 28.77 -278.24 a 263.99 263.99 0 0 1 115.37 -115.37 c 56.47 -28.77 130.39 -28.77 278.24 -28.77 Z';
+const svgs = {
+  s1: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path d="${BG}" fill="#2A2A2E"/><rect x="448" y="256" width="128" height="64" rx="24" fill="#E8E8EA"/><rect x="288" y="320" width="448" height="448" rx="64" fill="#E8E8EA"/><rect x="480" y="384" width="64" height="320" rx="32" fill="#2A2A2E"/><rect x="480" y="576" width="64" height="128" rx="32" fill="#22d3ee"/></svg>`,
+  s2: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path d="${BG}" fill="#2A2A2E"/><circle cx="512" cy="512" r="320" fill="none" stroke="#22d3ee" stroke-width="64"/><circle cx="512" cy="512" r="256" fill="#E8E8EA"/><rect x="464" y="368" width="96" height="288" rx="32" fill="#2A2A2E"/><rect x="368" y="464" width="288" height="96" rx="32" fill="#2A2A2E"/></svg>`,
+  s3: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path d="${BG}" fill="#2A2A2E"/><rect x="448" y="256" width="128" height="64" rx="32" fill="#E8E8EA"/><rect x="256" y="320" width="512" height="448" rx="64" fill="#E8E8EA"/><path d="M 320 560 L 448 432 L 576 560 L 704 432" fill="none" stroke="#22d3ee" stroke-width="96" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+};
+for (const [id, markup] of Object.entries(svgs)) {
+  const host = document.getElementById(id);
+  for (const size of [256, 64, 32, 16]) {
+    const fig = document.createElement("figure");
+    const wrap = document.createElement("div");
+    wrap.innerHTML = markup;
+    const el = wrap.firstChild;
+    el.setAttribute("width", size);
+    el.setAttribute("height", size);
+    fig.appendChild(el);
+    const cap = document.createElement("figcaption");
+    cap.textContent = size + "px";
+    fig.appendChild(cap);
+    host.appendChild(fig);
+  }
+}
+</script>
+</body>
+</html>

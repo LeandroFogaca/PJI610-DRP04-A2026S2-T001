@@ -1,4 +1,22 @@
+<div align="center">
+
+<img src="icon-design/export/icon.svg" width="150" alt="Ícone do projeto: bateria em squircle grafite com nível em ciano">
+
 # Plataforma IoT para Monitoramento de Baterias
+
+</div>
+
+---
+
+<p align="center">
+  <img src="https://img.shields.io/badge/STATUS-EM_DESENVOLVIMENTO-yellow" alt="Status: em desenvolvimento">
+  <img src="https://img.shields.io/badge/PROJETO-PJI610_UNIVESP-blue" alt="Projeto Integrador VI — UNIVESP">
+  <img src="https://img.shields.io/badge/STACK-REACT_19_%7C_FASTIFY_%7C_POSTGRESQL-blueviolet" alt="Stack: React 19, Fastify, PostgreSQL">
+</p>
+<p align="center">
+  <img src="https://img.shields.io/badge/IOT-ESP32_%7C_MQTT_%7C_WOKWI-%23087f8c" alt="IoT: ESP32, MQTT, Wokwi">
+  <img src="https://img.shields.io/badge/CONTRATOS-JSON_SCHEMA_v1_%7C_OPENAPI_3.1-orange" alt="Contratos: JSON Schema v1 e OpenAPI 3.1">
+</p>
 
 **Versão da especificação:** 1.0  
 **Estado:** MVP demonstrável implementado; integração com PostgreSQL e firmware devem ser executados no ambiente local
@@ -308,6 +326,19 @@ Correspondência com o relatório:
 - **RNF01–RNF05:** não invasividade, buffer local, robustez, responsividade e custo de replicação.
 
 A distinção explícita entre `devices`, `equipment`, `batteries` e associações temporais, bem como o módulo de classificação experimental de períodos e a stack Node.js/React, são **decisões de arquitetura desta especificação v1.0**, elaboradas a partir das necessidades discutidas para a implementação.
+
+## 15. Interface: temas e acessibilidade
+
+As duas páginas web (dashboard React e simulador do dispositivo) compartilham o mesmo comportamento de tema:
+
+- **Padrão automático:** sem escolha salva, a página segue o tema do sistema operacional (`prefers-color-scheme`) e reage a mudanças dele ao vivo.
+- **Escolha manual persistida:** em `localStorage` (`dashboard_theme` / `simulator_theme`), aplicada antes do primeiro paint por script inline (sem flash de tema errado ao carregar).
+- **Dashboard:** botão de engrenagem no header abre um `<dialog>` nativo (foco preso e Esc garantidos pelo browser) com: tema (Automático/Claro/Escuro), tamanho do texto (Normal/Grande/Maior — `zoom` de 100/115/130%, escala também os gráficos) e alto contraste (fortalece texto, bordas e foco sobre qualquer tema).
+- **Simulador:** sem painel de configurações (é página de debug/demo); o botão do header cicla `🌗 Auto → ☀️ Claro → 🌙 Escuro → Auto`.
+- **Movimento reduzido:** quem tem `prefers-reduced-motion` no sistema vê gráficos e transições estáticos, sem opção para ligar isso no painel.
+- **Header alinhado:** o padding do header usa a geometria da coluna de conteúdo (percentual, não `100vw`), alinhando marca e ações com o corpo da página em qualquer proporção de tela, inclusive 21:9.
+
+O design system completo de contraste WCAG AA, acessibilidade para daltônicos (linhas tracejadas nos gráficos) e accordions do simulador está em [`docs/superpowers/specs/2026-10-21-refatoracao-frontend-acessibilidade.md`](docs/superpowers/specs/2026-10-21-refatoracao-frontend-acessibilidade.md); a implementação de temas/acessibilidade desta seção em [`docs/superpowers/specs/2026-10-21-temas-acessibilidade-engrenagem.md`](docs/superpowers/specs/2026-10-21-temas-acessibilidade-engrenagem.md).
 
 ---
 
