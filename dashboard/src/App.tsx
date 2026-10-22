@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -11,7 +11,13 @@ import {
 } from "recharts";
 import { api, type Alert, type Battery, type Equipment, type Measurement, type Period } from "./api/client.js";
 
-const colors = ["#087f8c", "#f08a4b", "#536dfe", "#aa6fca"];
+/* duas paletas porque as cores "seguras" do claro somem no fundo grafite.
+   daltônico continua protegido: o tracejado vem junto em qualquer tema. */
+const paletteDark = ["#22d3ee", "#fbbf24", "#a78bfa", "#f472b6"];
+const paletteLight = ["#087f8c", "#f08a4b", "#536dfe", "#aa6fca"];
+// cor sozinha NÃO conta história pra quem é daltônico. por isso a 2a linha é tracejada,
+// a 3a pontilhada, etc. peguei a ideia daquele dashboard de usina que vi uma vez. bom demais.
+const dashArrays = ["", "8 4", "4 4", "12 4"];
 
 function asInputDate(date: Date): string {
   const offset = date.getTimezoneOffset() * 60_000;
@@ -23,6 +29,16 @@ function formatDate(value?: string): string {
 }
 
 function App() {
+  // default é auto: a página segue o tema do sistema enquanto ninguém escolher
+  // outra coisa. escolha manual persiste até a pessoa voltar pro auto.
+  const [choice, setChoice] = useState<string>(() => localStorage.getItem("dashboard_theme") ?? "auto");
+  const [systemDark, setSystemDark] = useState<boolean>(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const [textSize, setTextSize] = useState<string>(() => localStorage.getItem("dashboard_text_size") ?? "normal");
+  const [contrast, setContrast] = useState<boolean>(() => localStorage.getItem("dashboard_contrast") === "high");
+  const settingsRef = useRef<HTMLDialogElement>(null);
+  const theme = choice === "auto" ? (systemDark ? "dark" : "light") : choice;
+  // gráfico animando pra quem pediu menos movimento é tortura, não feedback
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const initialFrom = new Date(Date.now() - 24 * 60 * 60_000);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [batteries, setBatteries] = useState<Battery[]>([]);
@@ -37,6 +53,27 @@ function App() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = (event: MediaQueryListEvent) => setSystemDark(event.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  // aplica tudo no <html> e persiste as escolhas, senão a pessoa perde no F5
+  // e fica com raiva de nós. eu teria raiva.
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.dataset.textSize = textSize;
+    document.documentElement.toggleAttribute("data-contrast", contrast);
+    localStorage.setItem("dashboard_theme", choice);
+    localStorage.setItem("dashboard_text_size", textSize);
+    if (contrast) localStorage.setItem("dashboard_contrast", "high");
+    else localStorage.removeItem("dashboard_contrast");
+    // UI do browser (barra de endereço etc) acompanha o tema da página
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "light" ? "#f5f7f8" : "#0a0f14");
+  }, [choice, contrast, textSize, theme]);
 
   const selectedBattery = batteries.find((battery) => battery.equipment_id === selectedId);
   const reload = useCallback(async () => {
@@ -109,6 +146,9 @@ function App() {
   }, [refreshIntervalMs, reload, selectedId]);
 
   const latest = measurements.at(-1);
+  // um único lugar decide o tema do desenho; nada de if/theme espalhado igual migalha
+  const palette = theme === "light" ? paletteLight : paletteDark;
+  const isDark = theme !== "light";
   const chartData = useMemo(() => {
     const points = new Map<string, Record<string, string | number>>();
     for (const [equipmentId, rows] of Object.entries(comparison)) {
@@ -129,10 +169,32 @@ function App() {
     <div className="shell">
       <header className="topbar">
         <a className="brand" href="/" aria-label="Battery Monitor, página inicial">
-          <span className="brand-mark" aria-hidden="true">B</span>
+          <img className="brand-mark" src="/favicon.svg" alt="" width="32" height="32" />
           <span>Battery<span className="brand-light">Monitor</span></span>
         </a>
+        <button className="header-btn" type="button" onClick={() => settingsRef.current?.showModal()} aria-label="Configurações de aparência e acessibilidade" title="Configurações">⚙️</button>
       </header>
+
+      {/* dialog nativo: foco preso, Esc fecha e screen reader anuncia de graça */}
+      <dialog className="settings-dialog" ref={settingsRef} aria-label="Configurações de aparência e acessibilidade">
+        <div className="settings-head">
+          <h2>Configurações</h2>
+          <button className="settings-close" type="button" aria-label="Fechar configurações" onClick={() => settingsRef.current?.close()}>✕</button>
+        </div>
+        <fieldset>
+          <legend>Tema</legend>
+          <label className="settings-option"><input type="radio" name="theme-choice" value="auto" checked={choice === "auto"} onChange={() => setChoice("auto")} /> Automático (sistema)</label>
+          <label className="settings-option"><input type="radio" name="theme-choice" value="light" checked={choice === "light"} onChange={() => setChoice("light")} /> Claro</label>
+          <label className="settings-option"><input type="radio" name="theme-choice" value="dark" checked={choice === "dark"} onChange={() => setChoice("dark")} /> Escuro</label>
+        </fieldset>
+        <fieldset>
+          <legend>Tamanho do texto</legend>
+          <label className="settings-option"><input type="radio" name="text-size" value="normal" checked={textSize === "normal"} onChange={() => setTextSize("normal")} /> Normal</label>
+          <label className="settings-option"><input type="radio" name="text-size" value="large" checked={textSize === "large"} onChange={() => setTextSize("large")} /> Grande</label>
+          <label className="settings-option"><input type="radio" name="text-size" value="xlarge" checked={textSize === "xlarge"} onChange={() => setTextSize("xlarge")} /> Maior</label>
+        </fieldset>
+        <label className="settings-option"><input type="checkbox" checked={contrast} onChange={(event) => setContrast(event.target.checked)} /> Alto contraste</label>
+      </dialog>
 
       <main className="content">
         <section className="page-heading">
@@ -198,14 +260,16 @@ function App() {
             <div className="chart-wrap" role="img" aria-label="Gráfico de tensão em volts ao longo do tempo">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 12, right: 14, left: 0, bottom: 4 }}>
-                  <CartesianGrid stroke="#e8edf0" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="timestamp" tickFormatter={(value: string) => new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value))} minTickGap={28} />
-                  <YAxis domain={["auto", "auto"]} width={54} unit=" V" />
-                  <Tooltip labelFormatter={(value) => formatDate(String(value))} formatter={(value) => [`${Number(value).toFixed(2)} V`, "Tensão"]} />
+                  <CartesianGrid stroke={isDark ? "#182430" : "#e8edf0"} strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="timestamp" tick={{ fill: isDark ? "#8b98a5" : "#54636b" }} stroke={isDark ? "#243140" : "#cbd5e1"} tickFormatter={(value: string) => new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value))} minTickGap={28} />
+                  <YAxis domain={["auto", "auto"]} width={54} unit=" V" tick={{ fill: isDark ? "#8b98a5" : "#54636b" }} stroke={isDark ? "#243140" : "#cbd5e1"} />
+                  <Tooltip labelFormatter={(value) => formatDate(String(value))} formatter={(value) => [`${Number(value).toFixed(2)} V`, "Tensão"]} contentStyle={isDark ? { background: "#10161e", border: "1px solid #1c2836", borderRadius: 8, color: "#e6edf3" } : undefined} />
                   <Legend />
                   {Object.keys(comparison).map((id, index) => {
                     const item = equipment.find((entry) => entry.id === id);
-                    return <Line key={id} name={item?.name ?? id} type="monotone" dataKey={id} stroke={colors[index % colors.length]} strokeWidth={2.5} dot={false} connectNulls />;
+                    // ó, 2000 pontos com bolinha em cada = tapete de Natal. só mostra os dots
+                    // quando a série cabe no olho (≤200). no hover o dot sempre aparece, pode confiar.
+                    return <Line key={id} name={item?.name ?? id} type="monotone" dataKey={id} stroke={palette[index % palette.length]} strokeWidth={2.5} strokeDasharray={dashArrays[index % dashArrays.length]} dot={chartData.length <= 200 ? { r: 3.5 } : false} activeDot={{ r: 5 }} connectNulls isAnimationActive={!reducedMotion} aria-label={`${item?.name ?? id} - linha ${index === 0 ? "contínua" : "tracejada"}`} />;
                   })}
                 </LineChart>
               </ResponsiveContainer>
@@ -233,7 +297,7 @@ function App() {
                     disabled={item.id === selectedId}
                     onChange={() => toggleComparison(item.id)}
                   />
-                  <span className="legend-swatch" style={{ backgroundColor: colors[index % colors.length] }} aria-hidden="true" />
+                  <span className="legend-swatch" style={{ backgroundColor: palette[index % palette.length] }} aria-hidden="true" />
                   <span>{item.name}</span>
                   {item.id === selectedId && <span className="selected-tag">Selecionado</span>}
                 </label>

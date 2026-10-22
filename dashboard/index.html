@@ -3,8 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f5f7f8" />
+    <meta name="theme-color" content="#0a0f14" />
+    <script>
+      // pinta tema/tamanho/contraste antes do React nascer: sem isso, quem usa tema
+      // claro no sistema leva um flash de dark no primeiro frame quando o default é auto.
+      (function () {
+        var root = document.documentElement;
+        var choice = localStorage.getItem("dashboard_theme") || "auto";
+        root.setAttribute("data-theme", choice === "auto" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : choice);
+        root.dataset.textSize = localStorage.getItem("dashboard_text_size") || "normal";
+        if (localStorage.getItem("dashboard_contrast") === "high") root.setAttribute("data-contrast", "");
+      })();
+    </script>
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.webmanifest">
     <meta name="description" content="Monitoramento demonstrativo de tensões de baterias em equipamentos." />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
     <title>Battery Monitor | Operação</title>
   </head>
   <body>

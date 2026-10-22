@@ -1,13 +1,50 @@
+/* Ops Center: dark por padrão porque monitoramento industrial não dorme.
+   Claro continua lá pra quem insiste (e pras apresentações com projetor ruim). */
 :root {
   font-family: "Segoe UI", Arial, sans-serif;
-  color: #202a32;
-  background: #f5f7f8;
+  color: #e6edf3;
+  background: #0a0f14;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   font-weight: 400;
-  --muted: #74818a;
+  --muted: #8b98a5;
+  --border: #1c2836;
+  --teal: #22d3ee;
+  --teal-hover: #4ddcf5;
+  --on-accent: #06222a;
+  --surface: #0f151d;
+  --text-main: #e6edf3;
+  --text-secondary: #8b98a5;
+  --card-bg: #10161e;
+  --input-bg: #0b1016;
+  --input-border: #243140;
+  --row-line: #16212c;
+  --grid-line: #182430;
+  --live: #34d399;
+  /* sem isso, scrollbar e ícone do datetime-local vêm BRANCOS sobre o grafite.
+     o browser entrega o controle nativo no tema certo de graça — é só pedir. */
+  color-scheme: dark;
+}
+
+/* o modo claro antigo virou hóspede, não dono da casa */
+[data-theme="light"] {
+  --muted: #54636b;
   --border: #e6ebee;
   --teal: #087f8c;
+  --teal-hover: #066c77;
+  --on-accent: #ffffff;
+  --surface: #fafbfc;
+  --text-main: #202a32;
+  --text-secondary: #54636b;
+  --card-bg: #ffffff;
+  --input-bg: #ffffff;
+  --input-border: #dce3e7;
+  --row-line: #f0f2f3;
+  --grid-line: #e8edf0;
+  --live: #25a887;
+  color-scheme: light;
+  color: #202a32;
+  background: #f5f7f8;
 }
 
 * { box-sizing: border-box; }
@@ -15,70 +52,118 @@ body { margin: 0; min-width: 320px; }
 button, input, select { font: inherit; }
 button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid #75cbd2; outline-offset: 2px; }
 .shell { min-height: 100vh; }
-.topbar { height: 72px; padding: 0 max(28px, calc((100vw - 1240px) / 2)); display: flex; justify-content: space-between; align-items: center; background: #fff; border-bottom: 1px solid var(--border); }
-.brand { display: flex; align-items: center; gap: 10px; color: #202a32; font-family: "Segoe UI", Arial, sans-serif; font-size: 19px; font-weight: 800; text-decoration: none; letter-spacing: -.6px; }
-.brand-mark { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; background: #087f8c; color: #fff; font-size: 17px; }
-.brand-light { font-weight: 500; color: #74818a; }
+/* 50% − 592px = borda do texto do conteúdo ((1240/2) − 28 de padding). era 100vw,
+   que conta a barra de rolagem e deixava o header 20px fora do eixo em tela larga. */
+.topbar { height: 72px; padding: 0 max(28px, calc(50% - 592px)); display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--text-main); font-family: "Segoe UI", Arial, sans-serif; font-size: 19px; font-weight: 800; text-decoration: none; letter-spacing: -.6px; }
+/* agora é o ícone da casa: o squircle já vem pronto no SVG, sem fundo teal por baixo */
+.brand-mark { width: 32px; height: 32px; }
+.brand-light { font-weight: 500; color: var(--muted); }
+.header-btn { height: 38px; padding: 0 13px; border: 1px solid var(--input-border); border-radius: 7px; background: var(--card-bg); color: var(--text-main); font-size: 15px; cursor: pointer; white-space: nowrap; }
+.header-btn:hover { background: var(--surface); }
 .refresh-note { display: inline-flex; align-items: center; gap: 8px; }
-.live-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: #25a887; }
+.live-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: var(--live); box-shadow: 0 0 8px var(--live); }
 .content { max-width: 1240px; margin: 0 auto; padding: 36px 28px 48px; }
 .page-heading { display: flex; justify-content: space-between; align-items: end; margin-bottom: 25px; }
 .eyebrow { margin: 0 0 9px; color: var(--teal); font-size: 10px; font-weight: 700; letter-spacing: 1.4px; }
 h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 6px; font-family: "Segoe UI", Arial, sans-serif; font-size: 29px; letter-spacing: -.9px; }
-.subheading { margin: 0; color: var(--muted); font-size: 13px; }
-.refresh-note { padding-bottom: 5px; color: var(--muted); font-size: 11px; }
-.card { background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 6px rgb(30 50 60 / 3%); }
-.filters { display: flex; align-items: end; gap: 16px; padding: 17px 18px; margin-bottom: 17px; }
-.filters label { display: grid; gap: 7px; min-width: 0; color: #65737c; font-size: 11px; font-weight: 600; }
-.filters select, .filters input { min-width: 160px; height: 38px; padding: 0 10px; border: 1px solid #dce3e7; border-radius: 7px; background: #fff; color: #26343b; font-size: 12px; }
+.subheading { margin: 0; color: var(--text-secondary); font-size: 13px; }
+.refresh-note { padding-bottom: 5px; color: var(--text-secondary); font-size: 11px; }
+/* card elevado no escuro = borda fina + halo ciano quase imperceptível. quase. */
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 0 0 1px rgba(34, 211, 238 / 4%), 0 8px 24px rgb(0 0 0 / 35%); }
+[data-theme="light"] .card { box-shadow: 0 2px 6px rgb(30 50 60 / 3%); }
+.filters { display: flex; align-items: end; gap: 12px; padding: 20px; margin-bottom: 17px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+.filters label { display: grid; gap: 7px; min-width: 0; color: var(--text-secondary); font-size: 11px; font-weight: 600; }
+.filters select, .filters input { min-width: 160px; height: 38px; padding: 0 10px; border: 1px solid var(--input-border); border-radius: 7px; background: var(--input-bg); color: var(--text-main); font-size: 12px; }
 .filters label:first-child { flex: 1.4; }
-.button { height: 38px; padding: 0 15px; border: 0; border-radius: 7px; background: var(--teal); color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-.button:hover:not(:disabled) { background: #066c77; }
+.button { height: 38px; padding: 0 15px; border: 0; border-radius: 7px; background: var(--teal); color: var(--on-accent); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.button:hover:not(:disabled) { background: var(--teal-hover); }
 .button:disabled { opacity: .5; cursor: not-allowed; }
-.error-banner { margin: 12px 0; padding: 12px 14px; border: 1px solid #f2b8ae; border-radius: 8px; background: #fff4f2; color: #9e382d; font-size: 13px; }
+.error-banner { margin: 12px 0; padding: 12px 14px; border: 1px solid rgba(248, 184, 170 / .4); border-radius: 8px; background: rgba(127, 29, 29 / .25); color: #fca5a5; font-size: 13px; }
+/* erro no claro = pastel de sempre. marrom translúcido do dark morria em fundo branco */
+[data-theme="light"] .error-banner { background: #fff4f2; border-color: #f2b8ae; color: #8b2e1e; }
 .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 17px; }
 .metric-card { min-height: 137px; padding: 18px 20px; }
-.metric-heading { display: flex; align-items: center; justify-content: space-between; color: #65737c; font-size: 12px; font-weight: 600; }
+.metric-heading { display: flex; align-items: center; justify-content: space-between; color: var(--text-secondary); font-size: 12px; font-weight: 600; }
 .metric-icon { width: 29px; height: 29px; display: grid; place-items: center; border-radius: 9px; font-size: 16px; font-weight: 700; }
-.metric-icon.voltage { background: #e4f5f3; color: #087f8c; }
-.metric-icon.history { background: #e9edff; color: #536dfe; }
-.metric-icon.warning { background: #fff1e8; color: #e47538; }
-.metric-value { display: block; margin: 14px 0 4px; font-family: "Segoe UI", Arial, sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -.7px; }
-.metric-caption { color: var(--muted); font-size: 10px; }
+.metric-icon.voltage { background: rgba(34, 211, 238 / .12); color: var(--teal); }
+.metric-icon.history { background: rgba(167, 139, 250 / .15); color: #a78bfa; }
+.metric-icon.warning { background: rgba(251, 191, 36 / .15); color: #fbbf24; }
+[data-theme="light"] .metric-icon.voltage { background: #e4f5f3; color: #087f8c; }
+[data-theme="light"] .metric-icon.history { background: #e9edff; color: #536dfe; }
+[data-theme="light"] .metric-icon.warning { background: #fff1e8; color: #e47538; }
+/* número em mono porque dígito proporcional mente: "24.1" e "24.8" têm larguras diferentes,
+   e ninguém deveria piscar o olho tentando adivinhar quem é maior. */
+.metric-value { display: block; margin: 14px 0 4px; font-family: "JetBrains Mono", Consolas, monospace; font-size: 26px; font-weight: 700; letter-spacing: -.5px; }
+.metric-caption { color: var(--text-secondary); font-size: 10px; }
 .chart-card, .alerts-card { padding: 20px 21px 15px; margin-bottom: 17px; }
 .section-heading { display: flex; justify-content: space-between; align-items: start; gap: 14px; }
-.section-heading h2 { margin-bottom: 5px; font-family: "Segoe UI", Arial, sans-serif; font-size: 15px; letter-spacing: -.25px; }
-.section-heading p { margin-bottom: 0; color: var(--muted); font-size: 11px; }
+.section-heading h2 { margin-bottom: 5px; font-family: "Segoe UI", Arial, sans-serif; font-size: 15px; letter-spacing: -.25px; color: var(--text-main); }
+.section-heading p { margin-bottom: 0; color: var(--text-secondary); font-size: 11px; }
 .chart-wrap { width: 100%; height: 285px; margin-top: 15px; font-size: 10px; }
-.chart-footer { display: flex; justify-content: space-between; margin-top: 7px; padding-top: 11px; border-top: 1px solid #f0f2f3; color: #8a969d; font-size: 10px; }
-.empty-state { min-height: 220px; display: grid; place-items: center; color: #87939a; font-size: 12px; text-align: center; }
+.chart-footer { display: flex; justify-content: space-between; margin-top: 7px; padding-top: 11px; border-top: 1px solid var(--border); color: var(--text-secondary); font-size: 10px; }
+.empty-state { min-height: 220px; display: grid; place-items: center; color: var(--text-secondary); font-size: 12px; text-align: center; }
 .empty-state.compact { min-height: 80px; padding: 10px; }
 .lower-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 17px; margin-bottom: 17px; }
 .compare-card, .periods-card { padding: 19px 20px; }
 .comparison-list { display: grid; gap: 13px; margin-top: 19px; }
-.comparison-option { display: flex; align-items: center; gap: 9px; color: #425059; font-size: 12px; cursor: pointer; }
+.comparison-option { display: flex; align-items: center; gap: 9px; color: var(--text-main); font-size: 12px; cursor: pointer; }
 .comparison-option input { width: 15px; height: 15px; accent-color: var(--teal); }
 .legend-swatch { width: 9px; height: 9px; border-radius: 3px; }
-.selected-tag { margin-left: auto; color: #829097; font-size: 10px; }
+.selected-tag { margin-left: auto; color: var(--text-secondary); font-size: 10px; }
 .period-list { display: grid; gap: 13px; margin: 17px 0 0; padding: 0; list-style: none; }
 .period-list li { display: flex; align-items: center; gap: 11px; }
-.period-icon { width: 29px; height: 29px; display: grid; place-items: center; border-radius: 50%; background: #eff3f4; color: #718089; font-size: 17px; }
-.period-icon.charging { background: #e5f5ee; color: #23875e; }
-.period-icon.discharging { background: #fff0e7; color: #d56c33; }
+.period-icon { width: 29px; height: 29px; display: grid; place-items: center; border-radius: 50%; background: var(--row-line); color: var(--text-secondary); font-size: 17px; }
+.period-icon.charging { background: rgba(52, 211, 153 / .15); color: #34d399; }
+.period-icon.discharging { background: rgba(251, 146, 60 / .15); color: #fb923c; }
+[data-theme="light"] .period-icon { background: #eff3f4; color: #718089; }
+[data-theme="light"] .period-icon.charging { background: #e5f5ee; color: #23875e; }
+[data-theme="light"] .period-icon.discharging { background: #fff0e7; color: #d56c33; }
 .period-list strong, .period-list small { display: block; }
 .period-list strong { margin-bottom: 3px; font-size: 11px; font-weight: 600; }
-.period-list small { color: var(--muted); font-size: 10px; }
-.alert-count { padding: 5px 9px; border-radius: 20px; background: #edf1f3; color: #61717a; font-size: 10px; white-space: nowrap; }
-.alert-count.has-alerts { background: #fff0e9; color: #b34b28; }
+.period-list small { color: var(--text-secondary); font-size: 10px; }
+.alert-count { padding: 5px 9px; border-radius: 20px; background: var(--row-line); color: var(--text-secondary); font-size: 10px; white-space: nowrap; }
+.alert-count.has-alerts { background: rgba(248, 113, 113 / .14); color: #fca5a5; }
+[data-theme="light"] .alert-count { background: #edf1f3; color: #61717a; }
+[data-theme="light"] .alert-count.has-alerts { background: #fff0e9; color: #8b2e1e; }
 .table-scroll { overflow-x: auto; margin-top: 15px; }
 table { width: 100%; border-collapse: collapse; text-align: left; }
-th { padding: 10px 9px; border-bottom: 1px solid var(--border); color: #859198; font-size: 10px; font-weight: 600; }
-td { padding: 12px 9px; border-bottom: 1px solid #f0f2f3; color: #46545c; font-size: 11px; }
-.status-pill { padding: 5px 8px; border-radius: 20px; background: #fff0e9; color: #b34b28; font-size: 10px; white-space: nowrap; }
+th { padding: 10px 9px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 10px; font-weight: 600; }
+td { padding: 12px 9px; border-bottom: 1px solid var(--row-line); color: #c3cfd8; font-size: 11px; }
+[data-theme="light"] td { color: #46545c; }
+.status-pill { padding: 5px 8px; border-radius: 20px; background: rgba(248, 113, 113 / .14); color: #fca5a5; font-size: 10px; white-space: nowrap; }
+[data-theme="light"] .status-pill { background: #fff0e9; color: #8b2e1e; }
+/* legenda do recharts vem com a cor da linha no texto; no dark isso some, então puxa pro cinza nosso */
+.chart-wrap .recharts-legend-item-text { color: var(--text-secondary) !important; }
+
+/* engrenagem → <dialog>. foco/Esc já vêm do elemento nativo, aqui só pintura */
+.settings-dialog { width: min(340px, 92vw); padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--card-bg); color: var(--text-main); box-shadow: 0 16px 40px rgb(0 0 0 / 45%); }
+[data-theme="light"] .settings-dialog { box-shadow: 0 16px 40px rgb(30 50 60 / 20%); }
+.settings-dialog::backdrop { background: rgb(0 0 0 / 55%); }
+.settings-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.settings-head h2 { margin: 0; font-size: 15px; }
+.settings-close { border: 0; background: none; color: var(--text-secondary); font-size: 14px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+.settings-close:hover { background: var(--surface); color: var(--text-main); }
+.settings-dialog fieldset { margin: 0 0 14px; padding: 0; border: 0; }
+.settings-dialog legend { margin-bottom: 6px; color: var(--text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; }
+.settings-option { display: flex; align-items: center; gap: 9px; padding: 6px 0; font-size: 13px; cursor: pointer; }
+.settings-option input { accent-color: var(--teal); }
+
+/* tamanho de texto = zoom no html: escala tudo (gráficos inclusos) sem reescrever
+   nenhum font-size pra rem. efeito colateral desejado: cards crescem junto. */
+html[data-text-size="large"] { zoom: 1.15; }
+html[data-text-size="xlarge"] { zoom: 1.3; }
+
+/* alto contraste: não é "tema novo", é um amplificador em cima do tema atual.
+   por isso só mexe variáveis + foco + td, e vale para claro e escuro. */
+html[data-contrast] { --text-main: #ffffff; --text-secondary: #e3eaef; --muted: #e3eaef; --border: #5c6f7e; --input-border: #7d93a2; --row-line: #2b3a47; color: #ffffff; }
+html[data-theme="light"][data-contrast] { --text-main: #000000; --text-secondary: #1c262c; --muted: #1c262c; --border: #46555e; --input-border: #2e3b43; --row-line: #b9c4ca; color: #000000; }
+html[data-contrast] td { color: var(--text-main); }
+html[data-contrast] :focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
 
 @media (max-width: 760px) {
-  .topbar { height: 62px; padding: 0 17px; }
+  .topbar { height: 62px; padding: 0 16px; }
   .content { padding: 26px 16px 34px; }
   .page-heading { align-items: start; gap: 15px; flex-direction: column; }
   h1 { font-size: 25px; }

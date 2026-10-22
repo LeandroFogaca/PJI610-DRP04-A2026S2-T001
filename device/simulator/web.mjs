@@ -386,6 +386,19 @@ const server = createServer(async (req, res) => {
     return sendJson(res, 200, { success: true });
   }
 
+  // O favicon pedido pelo browser: mesmo padrão do index, lido do disco a cada request
+  if (url.pathname === "/favicon.svg") {
+    try {
+      const iconPath = new URL("./public/favicon.svg", import.meta.url);
+      const content = await readFile(iconPath, "utf-8");
+      res.writeHead(200, { "Content-Type": "image/svg+xml; charset=utf-8" });
+      return res.end(content);
+    } catch {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ error: "favicon indisponível" }));
+    }
+  }
+
   // Static HTML File Serving
   if (url.pathname === "/" || url.pathname === "/index.html") {
     try {
